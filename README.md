@@ -1,231 +1,222 @@
-# FlexAutoML
+﻿# neko-matic
 
-A configurable, production-style **Automated Machine Learning** framework for tabular datasets. FlexAutoML automatically profiles your data, builds preprocessing pipelines, trains multiple ML models, tunes hyperparameters with Optuna, evaluates results across multiple metrics, and presents everything through an interactive Streamlit dashboard.
+neko-matic is a configurable AutoML platform with:
 
----
+- `backend/`: FastAPI service + modular ML engine
+- `frontend/`: Next.js dashboard
 
-## Features
+The platform supports dataset upload, pipeline configuration, asynchronous model training, leaderboard tracking, explainability output, and artifact export.
 
-| Feature | Details |
-|---|---|
-| **Dataset Profiling** | Row/column counts, feature types, missing values, correlation matrix, class imbalance |
-| **Auto Preprocessing** | Imputation, scaling, one-hot encoding, optional SelectKBest feature selection |
-| **Model Registry** | 8 classifiers + 8 regressors (sklearn, XGBoost, LightGBM) |
-| **HPO** | Optuna TPE sampler with cross-validation; configurable trial budget |
-| **Evaluation** | Accuracy, Precision, Recall, F1, ROC-AUC (classification) · RMSE, MAE, R² (regression) |
-| **Leaderboard** | Auto-ranked table with the best model highlighted |
-| **Explainability** | SHAP feature importance via TreeExplainer / KernelExplainer |
-| **Streamlit UI** | Upload → Configure → Train → Inspect → Download, all in-browser |
-| **CLI** | `run_automl.py` for headless / scripted execution |
-| **GPU Support** | Auto-detected; XGBoost (`device=cuda`) and LightGBM (`device=gpu`) |
-| **YAML Config** | Fully configurable via `flexautoml/configs/default.yaml` |
+## Architecture
 
----
+`frontend` -> `backend API` -> `backend/core` training engine -> `models/runs/<run_id>/` artifacts
 
-## Project Structure
+## Repository Layout
 
-```
+```text
 auto-ml/
-├── flexautoml/
-│   ├── __init__.py
+├── backend/
+│   ├── main.py
+│   ├── api/
+│   │   ├── routes_datasets.py
+│   │   ├── routes_training.py
+│   │   └── routes_results.py
 │   ├── core/
-│   │   ├── profiler.py           # Dataset analysis & problem-type detection
-│   │   ├── preprocessing.py      # ColumnTransformer pipeline builder
-│   │   ├── feature_engineering.py# Datetime extraction, high-cardinality enc.
-│   │   ├── model_registry.py     # Model catalogue + Optuna search spaces
-│   │   ├── optimizer.py          # Optuna HPO wrapper
-│   │   ├── trainer.py            # Training orchestrator
-│   │   ├── evaluator.py          # Multi-metric evaluation
-│   │   └── leaderboard.py        # Ranked results table
+│   │   ├── automl_trainer.py
+│   │   ├── profiler.py
+│   │   ├── preprocessing.py
+│   │   ├── feature_engineering.py
+│   │   ├── outlier_detection.py
+│   │   ├── model_registry.py
+│   │   ├── optimizer.py
+│   │   ├── evaluator.py
+│   │   ├── leaderboard.py
+│   │   └── trainer.py
+│   ├── meta_learning/
 │   ├── explainability/
-│   │   └── shap_explainer.py     # SHAP feature importance & plots
-│   ├── ui/
-│   │   └── app.py                # Streamlit dashboard (5 pages)
-│   ├── configs/
-│   │   └── default.yaml          # Example configuration file
-│   └── utils/
-│       └── config_loader.py      # YAML loader with dot-path accessors
-├── run_automl.py                 # CLI entry point
+│   ├── utils/
+│   └── configs/default.yaml
+├── frontend/
+│   ├── app/
+│   │   ├── dataset_upload/
+│   │   ├── dataset_explorer/
+│   │   ├── automl_configuration/
+│   │   ├── training_monitor/
+│   │   ├── leaderboard/
+│   │   ├── explainability/
+│   │   └── model_export/
+│   └── package.json
+├── models/
+│   └── runs/
 ├── requirements.txt
 └── README.md
 ```
 
----
+## Prerequisites
 
-## Quickstart
+- Python 3.10+
+- Node.js 18+
+- npm 9+
 
-### 1 — Install dependencies
+## Backend Setup
 
-```bash
-# Create and activate a virtual environment (recommended)
-python -m venv .venv
-.venv\Scripts\activate          # Windows
-# source .venv/bin/activate     # Linux / macOS
-
+```powershell
+# from repo root
+python -m venv auto-ml-env
+& "./auto-ml-env/Scripts/Activate.ps1"
 pip install -r requirements.txt
+uvicorn backend.main:app --reload --port 8000
 ```
 
-> **GPU (RTX 3050 / CUDA):** XGBoost and LightGBM will automatically use the
-> GPU when `nvidia-smi` is accessible.  No extra steps needed.
+Backend health check:
 
----
-
-### 2 — Launch the Streamlit UI
-
-```bash
-streamlit run flexautoml/ui/app.py
+```text
+GET http://localhost:8000/
 ```
 
-Then open `http://localhost:8501` in your browser and follow the five pages:
+Expected response:
 
-| Page | Action |
-|---|---|
-| 📊 Dataset Explorer | Upload a CSV, pick the target column, view the profile |
-| ⚙️ AutoML Configuration | Select models, set metric, trials, preprocessing |
-| 🚀 Training Monitor | Press **Start** and watch progress |
-| 🏆 Results | Leaderboard, metric charts, SHAP analysis |
-| 💾 Model Export | Download any pipeline as `.pkl` |
-
----
-
-### 3 — CLI (headless)
-
-```bash
-# Basic run
-python run_automl.py data/titanic.csv Survived
-
-# With custom config
-python run_automl.py data/housing.csv price --config flexautoml/configs/default.yaml
-
-# Specific models, metric, and trial budget
-python run_automl.py data/iris.csv species \
-    --models RandomForestClassifier XGBClassifier LGBMClassifier \
-    --metric f1 \
-    --trials 50 \
-    --output results/
+```json
+{"service": "neko-matic API", "status": "ok"}
 ```
 
-Outputs written to `--output` directory:
-- `leaderboard.csv` — ranked model comparison
-- `<BestModel>_classification.pkl` (or `_regression.pkl`) — best pipeline
+## Frontend Setup
 
----
-
-### 4 — Programmatic API
-
-```python
-import pandas as pd
-from flexautoml.core.profiler import DatasetProfiler
-from flexautoml.core.preprocessing import PreprocessingPipeline
-from flexautoml.core.trainer import AutoMLTrainer
-from flexautoml.core.leaderboard import Leaderboard
-from flexautoml.utils.config_loader import ConfigLoader
-
-df = pd.read_csv("data/titanic.csv")
-target = "Survived"
-
-# 1. Profile
-profiler = DatasetProfiler(df, target)
-profile = profiler.profile_dataset()
-print(profiler.get_summary())
-
-# 2. Preprocess
-feat = profile["feature_types"]
-preproc = PreprocessingPipeline(
-    numerical_features=[c for c in feat["numerical"] if c != target],
-    categorical_features=[c for c in feat["categorical"] if c != target],
-    problem_type=profile["problem_type"],
-)
-
-# 3. Train
-trainer = AutoMLTrainer(
-    problem_type=profile["problem_type"],
-    preprocessing_pipeline=preproc,
-    selected_models=["RandomForestClassifier", "XGBClassifier", "LGBMClassifier"],
-    metric="roc_auc",
-    n_trials=30,
-)
-results = trainer.train_all(df.drop(columns=[target]), df[target])
-
-# 4. Leaderboard
-lb = Leaderboard(profile["problem_type"], "roc_auc")
-print(lb.build(results))
-
-# 5. Save best model
-path = trainer.save_best_model("models/")
-print(f"Best model saved to {path}")
+```powershell
+# in new terminal
+Set-Location frontend
+npm install
+$env:NEXT_PUBLIC_API_BASE = "http://localhost:8000"
+npm run dev
 ```
 
----
+Open:
 
-## Configuration Reference
-
-Edit `flexautoml/configs/default.yaml` to customise a run:
-
-```yaml
-problem_type: auto                # auto | classification | regression
-target_column: null               # set here or in the UI
-
-preprocessing:
-  scaler: standard                # standard | minmax | null
-  num_impute_strategy: median     # mean | median | most_frequent
-  cat_impute_strategy: most_frequent
-  use_feature_selection: false
-  k_best_features: 10
-
-training:
-  selected_models: null           # null = all models
-  metric: accuracy                # accuracy | f1 | roc_auc | rmse | mae | r2
-  n_trials: 30
-  cv_folds: 5
-  test_size: 0.20
-  random_state: 42
-
-gpu:
-  use_gpu: auto                   # auto | true | false
-
-output:
-  save_dir: models
-  leaderboard_path: leaderboard.csv
+```text
+http://localhost:3000
 ```
 
----
+## API Endpoints
 
-## Available Models
+### Dataset and config
 
-### Classification
-`LogisticRegression` · `RandomForestClassifier` · `GradientBoostingClassifier` · `XGBClassifier` · `LGBMClassifier` · `SVC` · `KNeighborsClassifier` · `GaussianNB`
+- `POST /upload_dataset` (multipart file)
+- `POST /upload_config`
 
-### Regression
-`LinearRegression` · `Ridge` · `Lasso` · `RandomForestRegressor` · `GradientBoostingRegressor` · `XGBRegressor` · `LGBMRegressor` · `SVR`
+Example config payload:
 
----
-
-## Loading a Saved Model
-
-```python
-import joblib
-import pandas as pd
-
-pipeline = joblib.load("models/XGBClassifier_classification.pkl")
-new_data = pd.read_csv("new_data.csv")
-predictions = pipeline.predict(new_data)
+```json
+{
+	"config": {
+		"dataset_settings": {
+			"target_column": "target",
+			"problem_type_override": null,
+			"train_test_split": 0.2,
+			"cross_validation_folds": 5
+		},
+		"data_cleaning": {
+			"missing_value_strategy": "median",
+			"categorical_encoding": "onehot",
+			"feature_scaling": "standard"
+		},
+		"outlier_removal": {
+			"method": "none",
+			"threshold_parameters": {
+				"zscore_threshold": 3.0,
+				"iqr_multiplier": 1.5,
+				"isolation_forest_contamination": 0.05
+			}
+		},
+		"feature_engineering": {
+			"log_transform": false,
+			"polynomial_features": false,
+			"feature_interactions": false,
+			"feature_selection": {
+				"enabled": false,
+				"method": "variance_threshold",
+				"k_features": 20
+			}
+		},
+		"model_selection": {
+			"list_of_models_to_train": null
+		},
+		"hyperparameter_optimization": {
+			"optimization_method": "optuna",
+			"number_of_trials": 20,
+			"timeout": null,
+			"early_stopping": true
+		},
+		"training_strategy": {
+			"parallel_training": false,
+			"gpu_usage": "auto",
+			"time_budget": null
+		},
+		"evaluation_metrics": {
+			"primary_metric": "accuracy"
+		},
+		"explainability": {
+			"enable_shap": true
+		}
+	}
+}
 ```
 
-The saved object is the complete `sklearn.pipeline.Pipeline` (preprocessing + model), so no separate preprocessing step is needed at inference time.
+### Training and status
 
----
+- `POST /start_automl_run`
+- `GET /training_status?run_id=<id>`
 
-## Extending FlexAutoML
+Example training start payload:
 
-**Add a new model:** Add an entry to `CLASSIFICATION_MODELS` or `REGRESSION_MODELS` in `flexautoml/core/model_registry.py`, then optionally add a search-space entry in `get_hyperparameter_space()`.
+```json
+{
+	"dataset_id": "<dataset_id>",
+	"config_id": "<config_id>"
+}
+```
 
-**Add a new metric:** Update `_SKLEARN_METRIC_MAP` in `optimizer.py` and `_regression_metrics` / `_classification_metrics` in `evaluator.py`.
+### Results and artifacts
 
-**Custom preprocessing:** Subclass `sklearn.base.TransformerMixin` and add it to the pipeline steps in `preprocessing.py`.
+- `GET /leaderboard?run_id=<id>`
+- `GET /feature_importance?run_id=<id>`
+- `GET /download_model?run_id=<id>`
+- `GET /download_artifact?run_id=<id>&artifact=pipeline.pkl|training_report.json`
 
----
+## Dashboard Workflow
 
-## License
+1. Upload a CSV/XLSX dataset in `dataset_upload`.
+2. Inspect distribution and missingness in `dataset_explorer`.
+3. Upload or edit JSON config in `automl_configuration`.
+4. Start run and monitor progress in `training_monitor`.
+5. Inspect ranking in `leaderboard`.
+6. View explainability in `explainability`.
+7. Download artifacts in `model_export`.
 
-MIT
+## Artifacts
+
+Run artifacts are saved under:
+
+```text
+models/runs/<run_id>/
+	best_model.pkl
+	pipeline.pkl
+	training_report.json
+	feature_importance.json
+```
+
+## Validation Commands
+
+```powershell
+# backend syntax check
+python -m compileall backend
+
+# frontend production build
+Set-Location frontend
+npm run build
+```
+
+## Notes
+
+- Training runs execute asynchronously in background threads.
+- Run state is in-memory for the current backend process.
+- If backend restarts, in-memory run state resets, while artifacts on disk remain.

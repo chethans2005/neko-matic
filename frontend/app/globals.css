@@ -1,0 +1,260 @@
+:root {
+  --ink: #0f1a2b;
+  --mist: #f5efe6;
+  --panel: #fffdf8;
+  --accent: #d65434;
+  --accent-soft: #f0a64b;
+  --line: #dccdb7;
+  --muted: #6e6a63;
+  --ok: #1f7a4a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 10% 20%, #f8d7b6 0%, transparent 35%),
+    radial-gradient(circle at 90% 80%, #b7d7cf 0%, transparent 40%),
+    var(--mist);
+  min-height: 100vh;
+}
+
+.shell {
+  width: min(1200px, 94vw);
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  animation: rise 600ms ease-out;
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.04em;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+
+.hero p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+}
+
+.badge {
+  border: 1px solid var(--line);
+  background: #fff4e9;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.88rem;
+}
+
+.nav a:hover {
+  border-color: var(--accent);
+}
+
+.content {
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.95);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(15, 26, 43, 0.05);
+  animation: rise 500ms ease-out;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.config-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.form-section {
+  margin: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.form-section legend {
+  font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+  padding: 0 0.4rem;
+}
+
+.field-row {
+  margin-bottom: 0.8rem;
+}
+
+.field-row:last-child {
+  margin-bottom: 0;
+}
+
+.hint {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.inline-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.65rem 0;
+  font-weight: 500;
+}
+
+.inline-toggle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.checkbox-grid {
+  display: grid;
+  gap: 0.3rem 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.status-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.status-error {
+  color: #b3261e;
+  font-weight: 600;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea,
+button {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: #fff;
+}
+
+button {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 0.45rem;
+  font-size: 0.88rem;
+}
+
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(50px);
+  opacity: 0.35;
+}
+
+.orb-a {
+  width: 220px;
+  height: 220px;
+  background: #ff9f7a;
+  top: -40px;
+  left: -40px;
+}
+
+.orb-b {
+  width: 240px;
+  height: 240px;
+  background: #8cc8ba;
+  bottom: -40px;
+  right: -40px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .shell {
+    width: 94vw;
+    padding-top: 1.2rem;
+  }
+
+  .hero {
+    flex-direction: column;
+  }
+
+  .config-grid,
+  .checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}

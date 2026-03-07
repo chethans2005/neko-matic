@@ -1,0 +1,46 @@
+dataset_settings:
+  target_column: null
+  problem_type_override: null
+  train_test_split: 0.2
+  cross_validation_folds: 5
+
+data_cleaning:
+  missing_value_strategy: median
+  categorical_encoding: onehot
+  feature_scaling: standard
+
+outlier_removal:
+  method: none
+  threshold_parameters:
+    zscore_threshold: 3.0
+    iqr_multiplier: 1.5
+    isolation_forest_contamination: 0.05
+
+feature_engineering:
+  log_transform: false
+  polynomial_features: false
+  feature_interactions: false
+  feature_selection:
+    enabled: false
+    method: variance_threshold
+    k_features: 20
+
+model_selection:
+  list_of_models_to_train: null
+
+hyperparameter_optimization:
+  optimization_method: optuna
+  number_of_trials: 20
+  timeout: null
+  early_stopping: true
+
+training_strategy:
+  parallel_training: false
+  gpu_usage: auto
+  time_budget: null
+
+evaluation_metrics:
+  primary_metric: accuracy
+
+explainability:
+  enable_shap: true
