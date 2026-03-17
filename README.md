@@ -1,56 +1,47 @@
-﻿# neko-matic
+﻿
+# neko-matic: AutoML Platform
 
-neko-matic is a configurable AutoML platform with:
+**neko-matic** is a modular AutoML platform featuring:
 
-- `backend/`: FastAPI service + modular ML engine
-- `frontend/`: Next.js dashboard
+- **Backend**: FastAPI service with a pluggable ML engine (`backend/`)
+- **Frontend**: Next.js dashboard (`frontend/`)
 
-The platform supports dataset upload, pipeline configuration, asynchronous model training, leaderboard tracking, explainability output, and artifact export.
+Features include dataset upload, pipeline configuration, async model training, leaderboard, explainability, and artifact export.
+
+---
 
 ## Architecture
 
-`frontend` -> `backend API` -> `backend/core` training engine -> `models/runs/<run_id>/` artifacts
+```
+frontend (Next.js) → backend API (FastAPI) → backend/core (ML engine) → models/runs/<run_id>/ (artifacts)
+```
 
-## Repository Layout
+---
 
-```text
+## Project Structure
+
+```
 auto-ml/
 ├── backend/
 │   ├── main.py
 │   ├── api/
-│   │   ├── routes_datasets.py
-│   │   ├── routes_training.py
-│   │   └── routes_results.py
 │   ├── core/
-│   │   ├── automl_trainer.py
-│   │   ├── profiler.py
-│   │   ├── preprocessing.py
-│   │   ├── feature_engineering.py
-│   │   ├── outlier_detection.py
-│   │   ├── model_registry.py
-│   │   ├── optimizer.py
-│   │   ├── evaluator.py
-│   │   ├── leaderboard.py
-│   │   └── trainer.py
 │   ├── meta_learning/
 │   ├── explainability/
 │   ├── utils/
-│   └── configs/default.yaml
+│   └── configs/
 ├── frontend/
 │   ├── app/
-│   │   ├── dataset_upload/
-│   │   ├── dataset_explorer/
-│   │   ├── automl_configuration/
-│   │   ├── training_monitor/
-│   │   ├── leaderboard/
-│   │   ├── explainability/
-│   │   └── model_export/
+│   ├── components/
+│   ├── lib/
 │   └── package.json
 ├── models/
-│   └── runs/
+│   ├── runs/
 ├── requirements.txt
 └── README.md
 ```
+
+---
 
 ## Prerequisites
 
@@ -58,19 +49,21 @@ auto-ml/
 - Node.js 18+
 - npm 9+
 
+---
+
 ## Backend Setup
 
 ```powershell
-# from repo root
+# From repo root
 python -m venv auto-ml-env
 & "./auto-ml-env/Scripts/Activate.ps1"
 pip install -r requirements.txt
 uvicorn backend.main:app --reload --port 8000
 ```
 
-Backend health check:
+Health check:
 
-```text
+```
 GET http://localhost:8000/
 ```
 
@@ -80,25 +73,25 @@ Expected response:
 {"service": "neko-matic API", "status": "ok"}
 ```
 
+---
+
 ## Frontend Setup
 
 ```powershell
-# in new terminal
+# In new terminal
 Set-Location frontend
 npm install
 $env:NEXT_PUBLIC_API_BASE = "http://localhost:8000"
 npm run dev
 ```
 
-Open:
+Open: [http://localhost:3000](http://localhost:3000)
 
-```text
-http://localhost:3000
-```
+---
 
-## API Endpoints
+## API Endpoints (Backend)
 
-### Dataset and config
+### Dataset & Config
 
 - `POST /upload_dataset` (multipart file)
 - `POST /upload_config`
@@ -161,12 +154,12 @@ Example config payload:
 }
 ```
 
-### Training and status
+### Training & Status
 
 - `POST /start_automl_run`
 - `GET /training_status?run_id=<id>`
 
-Example training start payload:
+Example payload:
 
 ```json
 {
@@ -175,28 +168,32 @@ Example training start payload:
 }
 ```
 
-### Results and artifacts
+### Results & Artifacts
 
 - `GET /leaderboard?run_id=<id>`
 - `GET /feature_importance?run_id=<id>`
 - `GET /download_model?run_id=<id>`
 - `GET /download_artifact?run_id=<id>&artifact=pipeline.pkl|training_report.json`
 
+---
+
 ## Dashboard Workflow
 
-1. Upload a CSV/XLSX dataset in `dataset_upload`.
-2. Inspect distribution and missingness in `dataset_explorer`.
-3. Upload or edit JSON config in `automl_configuration`.
-4. Start run and monitor progress in `training_monitor`.
-5. Inspect ranking in `leaderboard`.
-6. View explainability in `explainability`.
-7. Download artifacts in `model_export`.
+1. Upload a CSV/XLSX dataset in **dataset_upload**
+2. Inspect distribution/missingness in **dataset_explorer**
+3. Upload/edit JSON config in **automl_configuration**
+4. Start run & monitor in **training_monitor**
+5. Inspect ranking in **leaderboard**
+6. View explainability in **explainability**
+7. Download artifacts in **model_export**
+
+---
 
 ## Artifacts
 
 Run artifacts are saved under:
 
-```text
+```
 models/runs/<run_id>/
 	best_model.pkl
 	pipeline.pkl
@@ -204,19 +201,23 @@ models/runs/<run_id>/
 	feature_importance.json
 ```
 
+---
+
 ## Validation Commands
 
 ```powershell
-# backend syntax check
+# Backend syntax check
 python -m compileall backend
 
-# frontend production build
+# Frontend production build
 Set-Location frontend
 npm run build
 ```
 
+---
+
 ## Notes
 
-- Training runs execute asynchronously in background threads.
-- Run state is in-memory for the current backend process.
-- If backend restarts, in-memory run state resets, while artifacts on disk remain.
+- Training runs execute asynchronously in background threads
+- Run state is in-memory for the current backend process
+- If backend restarts, in-memory run state resets, but artifacts on disk remain
