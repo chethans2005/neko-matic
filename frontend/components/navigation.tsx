@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 const routes = [
-  ["Upload", "/dataset_upload"],
+  ["Training (v2)", "/training"],
+  ["Dataset Upload", "/dataset_upload"],
   ["Explorer", "/dataset_explorer"],
   ["Configuration", "/automl_configuration"],
   ["Monitor", "/training_monitor"],
