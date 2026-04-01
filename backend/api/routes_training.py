@@ -11,12 +11,24 @@ router = APIRouter(tags=["training"])
 
 
 class StartRunRequest(BaseModel):
-    dataset_id: str
-    config_id: Optional[str] = None
+    dataset_id: Optional[str] = None  # V1 compat, ignored in V2
+    config_id: Optional[str] = None  # V1 compat, ignored in V2
+    config: Optional[dict] = None  # V2: optional config override
 
 
 @router.post("/start_automl_run")
 async def start_automl_run(payload: StartRunRequest) -> dict[str, str]:
+    """V2: Start AutoML run using active dataset and provided/default config."""
+    try:
+        run_id = TRAINING_ENGINE.start_active_run(payload.config)
+        return {"run_id": run_id, "status": "queued"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/start_automl_run_legacy")
+async def start_automl_run_legacy(payload: StartRunRequest) -> dict[str, str]:
+    """V1 backward compat: Start using dataset_id and config_id."""
     if payload.dataset_id not in TRAINING_ENGINE.datasets:
         raise HTTPException(status_code=404, detail="dataset_id not found")
     if payload.config_id and payload.config_id not in TRAINING_ENGINE.configs:
@@ -27,8 +39,20 @@ async def start_automl_run(payload: StartRunRequest) -> dict[str, str]:
 
 
 @router.get("/training_status")
-async def training_status(run_id: str) -> dict:
-    status = TRAINING_ENGINE.get_status(run_id)
-    if status.get("error"):
-        raise HTTPException(status_code=404, detail="run_id not found")
-    return status
+async def training_status(run_id: Optional[str] = None) -> dict:
+    """Get training status. If run_id omitted, returns active run status (V2)."""
+    if run_id:
+        # V1 compat: look up by run_id
+        status = TRAINING_ENGINE.get_status(run_id)
+        if status.get("error"):
+            raise HTTPException(status_code=404, detail="run_id not found")
+        return status
+    else:
+        # V2: return active run status
+        return TRAINING_ENGINE.get_active_run_status()
+
+
+@router.get("/active_run_status")
+async def get_active_run_status() -> dict:
+    """Get active run status (V2 endpoint)."""
+    return TRAINING_ENGINE.get_active_run_status()

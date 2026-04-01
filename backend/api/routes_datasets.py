@@ -25,6 +25,7 @@ class ConfigUploadRequest(BaseModel):
 
 @router.post("/upload_dataset")
 async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
+    """Upload and set as active dataset. V2: no dataset_id in response."""
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in {".csv", ".xlsx", ".xls"}:
         raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
@@ -50,11 +51,45 @@ async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
     target_column = dataframe.columns[-1]
     profile = profiler.analyze(dataframe, target_column)
     profile = json.loads(json.dumps(profile, default=str))
+    
+    # V2: Set as active dataset
+    TRAINING_ENGINE.set_active_dataset(str(dataset_path), profile)
+    
+    # V1 backward compat: also register
     dataset_id = TRAINING_ENGINE.register_dataset(str(dataset_path), profile)
 
     return {
-        "dataset_id": dataset_id,
+        "dataset_id": dataset_id,  # V1 compat
         "filename": file.filename,
+        "shape": [int(dataframe.shape[0]), int(dataframe.shape[1])],
+        "preview": dataframe.head(15).fillna("").to_dict(orient="records"),
+        "columns": dataframe.columns.tolist(),
+        "target_column_guess": target_column,
+        "profile": profile,
+    }
+
+
+@router.get("/active_dataset")
+async def get_active_dataset() -> dict[str, Any]:
+    """Get info about the currently active dataset (V2 endpoint)."""
+    info = TRAINING_ENGINE.get_active_dataset_info()
+    if not info:
+        raise HTTPException(status_code=404, detail="No active dataset")
+    
+    # Re-parse the dataset to return shape and preview
+    dataset_path = info["path"]
+    suffix = Path(dataset_path).suffix.lower()
+    if suffix == ".csv":
+        dataframe = pd.read_csv(dataset_path)
+    else:
+        dataframe = pd.read_excel(dataset_path)
+    
+    profile = info["profile"]
+    target_column = profile.get("target_column", dataframe.columns[-1])
+    
+    return {
+        "path": info["path"],
+        "filename": Path(info["path"]).name,
         "shape": [int(dataframe.shape[0]), int(dataframe.shape[1])],
         "preview": dataframe.head(15).fillna("").to_dict(orient="records"),
         "columns": dataframe.columns.tolist(),
@@ -65,7 +100,15 @@ async def upload_dataset(file: UploadFile = File(...)) -> dict[str, Any]:
 
 @router.post("/upload_config")
 async def upload_config(payload: ConfigUploadRequest) -> dict[str, str]:
+    """Upload config. Can optionally set as default via save_as_default flag."""
     config_id = TRAINING_ENGINE.register_config(payload.config)
     config_path = UPLOAD_DIR / f"{config_id}.json"
     config_path.write_text(json.dumps(payload.config, indent=2), encoding="utf-8")
     return {"config_id": config_id}
+
+
+@router.post("/set_default_config")
+async def set_default_config(payload: ConfigUploadRequest) -> dict[str, str]:
+    """Set default config for non-tech users (V2 endpoint)."""
+    TRAINING_ENGINE.set_default_config(payload.config)
+    return {"status": "default_config_saved"}
