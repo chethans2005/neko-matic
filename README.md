@@ -6,7 +6,9 @@
 - **Backend**: FastAPI service with a pluggable ML engine (`backend/`)
 - **Frontend**: Next.js dashboard (`frontend/`)
 
-Features include dataset upload, pipeline configuration, async model training, leaderboard, explainability, and artifact export.
+Features include dataset upload, guided data exploration, pipeline configuration, async model training, leaderboard, explainability, and artifact export.
+
+The current UX is optimized around a **single active dataset and a single active AutoML run**. Users upload once, explore once, configure defaults, and then launch training from one unified page.
 
 ---
 
@@ -15,6 +17,8 @@ Features include dataset upload, pipeline configuration, async model training, l
 ```
 frontend (Next.js) → backend API (FastAPI) → backend/core (ML engine) → models/runs/<run_id>/ (artifacts)
 ```
+
+The UI no longer asks users to manually manage dataset IDs or run IDs. Those identifiers remain internal implementation details only.
 
 ---
 
@@ -87,14 +91,18 @@ npm run dev
 
 Open: [http://localhost:3000](http://localhost:3000)
 
+The recommended workflow is the unified **Training** page at `/training`, which combines upload, guided exploration, configuration, live monitoring, results, and downloads in one place.
+
 ---
 
 ## API Endpoints (Backend)
 
 ### Dataset & Config
 
-- `POST /upload_dataset` (multipart file)
+- `POST /upload_dataset` (multipart file, also sets the active dataset)
+- `GET /active_dataset`
 - `POST /upload_config`
+- `POST /set_default_config`
 
 Example config payload:
 
@@ -157,35 +165,44 @@ Example config payload:
 ### Training & Status
 
 - `POST /start_automl_run`
-- `GET /training_status?run_id=<id>`
+- `GET /training_status` (returns the active run when no `run_id` is provided)
+- `GET /active_run_status`
 
-Example payload:
+Example payload for the active workflow:
 
 ```json
 {
-	"dataset_id": "<dataset_id>",
-	"config_id": "<config_id>"
+	"config": {
+		"dataset_settings": {
+			"target_column": "target"
+		}
+	}
 }
 ```
 
 ### Results & Artifacts
 
-- `GET /leaderboard?run_id=<id>`
-- `GET /feature_importance?run_id=<id>`
-- `GET /download_model?run_id=<id>`
-- `GET /download_artifact?run_id=<id>&artifact=pipeline.pkl|training_report.json`
+- `GET /leaderboard`
+- `GET /feature_importance`
+- `GET /download_model`
+- `GET /download_artifact?artifact=pipeline.pkl|training_report.json`
+- `GET /active_leaderboard`
+- `GET /active_feature_importance`
+- `GET /download_active_model`
+- `GET /download_active_artifact?artifact=training_report.json`
 
 ---
 
 ## Dashboard Workflow
 
-1. Upload a CSV/XLSX dataset in **dataset_upload**
-2. Inspect distribution/missingness in **dataset_explorer**
-3. Upload/edit JSON config in **automl_configuration**
-4. Start run & monitor in **training_monitor**
-5. Inspect ranking in **leaderboard**
-6. View explainability in **explainability**
-7. Download artifacts in **model_export**
+1. Open **Training** for the unified workflow.
+2. Upload a CSV/XLSX dataset once. The backend marks it as the active dataset.
+3. Review guided exploration tips and suggested visualizations.
+4. Configure the pipeline and optionally click **Save as Default** for non-technical users.
+5. Start AutoML and monitor progress, leaderboard, and explainability on the same page.
+6. Download the best model and training report when the run completes.
+
+Legacy pages such as `dataset_upload`, `dataset_explorer`, `automl_configuration`, and `training_monitor` are still available, but the main workflow now lives in `/training`.
 
 ---
 
@@ -200,6 +217,8 @@ models/runs/<run_id>/
 	training_report.json
 	feature_importance.json
 ```
+
+The run directory name is still backed by an internal identifier, but the UI no longer exposes it or requires users to enter it.
 
 ---
 
@@ -218,6 +237,7 @@ npm run build
 
 ## Notes
 
-- Training runs execute asynchronously in background threads
-- Run state is in-memory for the current backend process
-- If backend restarts, in-memory run state resets, but artifacts on disk remain
+- Training runs execute asynchronously in background threads.
+- The backend keeps the active dataset and active run in memory for the current process.
+- If the backend restarts, active state resets, but artifacts on disk remain.
+- The UI is intentionally single-run: users should not launch multiple AutoML jobs from the same session.
