@@ -1,14 +1,7 @@
 import Link from "next/link";
 
 const routes = [
-  ["Training (v2)", "/training"],
-  ["Dataset Upload", "/dataset_upload"],
-  ["Explorer", "/dataset_explorer"],
-  ["Configuration", "/automl_configuration"],
-  ["Monitor", "/training_monitor"],
-  ["Leaderboard", "/leaderboard"],
-  ["Explainability", "/explainability"],
-  ["Export", "/model_export"],
+  ["Unified Training", "/training"],
 ] as const;
 
 export function Navigation() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useMemo } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   uploadDataset,
   uploadConfig,
@@ -24,6 +24,8 @@ type FeatureSelectionMethod = "variance_threshold" | "mutual_information" | "rec
 type OptimizationMethod = "optuna";
 type GpuUsage = "auto" | boolean;
 type PrimaryMetric = "accuracy" | "f1" | "f1 score" | "precision" | "recall" | "roc_auc" | "rmse" | "mse" | "mae" | "r2";
+type FeatureImportanceRow = { feature?: string; importance?: number };
+type FeatureImportancePayload = { feature_importance?: FeatureImportanceRow[] };
 
 type AutoMLConfig = {
   dataset_settings: {
@@ -77,25 +79,6 @@ type AutoMLConfig = {
   };
 };
 
-const MODEL_OPTIONS = [
-  "GaussianNB",
-  "GradientBoostingClassifier",
-  "GradientBoostingRegressor",
-  "KNeighborsClassifier",
-  "LGBMClassifier",
-  "LGBMRegressor",
-  "Lasso",
-  "LinearRegression",
-  "LogisticRegression",
-  "RandomForestClassifier",
-  "RandomForestRegressor",
-  "Ridge",
-  "SVC",
-  "SVR",
-  "XGBClassifier",
-  "XGBRegressor",
-] as const;
-
 const defaultConfig: AutoMLConfig = {
   dataset_settings: {
     target_column: null,
@@ -142,7 +125,7 @@ export default function TrainingPage() {
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<Array<Record<string, unknown>>>([]);
-  const [featureImportance, setFeatureImportance] = useState<Record<string, unknown> | null>(null);
+  const [featureImportance, setFeatureImportance] = useState<FeatureImportancePayload | null>(null);
   
   // Tab state
   const [activeTab, setActiveTab] = useState<"upload" | "explore" | "config" | "monitor">("upload");
@@ -668,6 +651,30 @@ export default function TrainingPage() {
                             <td>{Number(row.training_time ?? 0).toFixed(2)}</td>
                           </tr>
                         ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {Array.isArray(featureImportance?.feature_importance) && featureImportance.feature_importance.length > 0 && (
+                  <div style={{ marginTop: "1rem" }}>
+                    <h5>Top Feature Importance (SHAP)</h5>
+                    <table style={{ width: "100%", marginTop: "0.5rem" }}>
+                      <thead>
+                        <tr>
+                          <th>Feature</th>
+                          <th>Importance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {featureImportance.feature_importance
+                          .slice(0, 10)
+                          .map((row: any, idx: number) => (
+                            <tr key={idx}>
+                              <td>{String(row.feature ?? "-")}</td>
+                              <td>{Number(row.importance ?? 0).toFixed(6)}</td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
