@@ -17,6 +17,14 @@ from backend.core.model_registry import ModelRegistry
 from backend.core.outlier_detection import OutlierDetectionEngine
 from backend.core.preprocessing import PreprocessingEngine
 from backend.core.profiler import DataProfiler
+from backend.core.exceptions import (
+    NoDatasetError,
+    DatasetFormatError,
+    DatasetLoadError,
+    ColumnNotFoundError,
+    ValidationError,
+    TrainingError,
+)
 from backend.explainability.shap_explainer import SHAPExplainer
 from backend.meta_learning.model_recommender import ModelRecommender
 from backend.utils.config_loader import BackendConfigLoader
@@ -125,9 +133,12 @@ class TrainingEngine:
         """Start AutoML run using active dataset and provided (or default) config.
         
         Returns run_id for backward compatibility.
+        
+        Raises:
+            NoDatasetError: If no active dataset is set.
         """
         if not self.active_dataset_path:
-            raise ValueError("No active dataset set")
+            raise NoDatasetError()
 
         # Use provided config or fall back to default
         if config_payload:
@@ -270,13 +281,26 @@ class TrainingEngine:
                 setattr(record, key, value)
 
     def _read_dataset(self, dataset_path: str) -> pd.DataFrame:
+        """Load dataset from file.
+        
+        Raises:
+            DatasetFormatError: If file format is not supported.
+            DatasetLoadError: If file cannot be loaded.
+        """
         path = Path(dataset_path)
         suffix = path.suffix.lower()
-        if suffix == ".csv":
-            return pd.read_csv(path)
-        if suffix in {".xlsx", ".xls"}:
-            return pd.read_excel(path)
-        raise ValueError(f"Unsupported dataset format: {suffix}")
+        
+        try:
+            if suffix == ".csv":
+                return pd.read_csv(path)
+            elif suffix in {".xlsx", ".xls"}:
+                return pd.read_excel(path)
+            else:
+                raise DatasetFormatError(suffix)
+        except DatasetFormatError:
+            raise
+        except Exception as e:
+            raise DatasetLoadError(dataset_path, str(e)) from e
 
     def _resolve_problem_type(self, profile: Dict[str, Any], config: Dict[str, Any]) -> str:
         override = config.get("dataset_settings", {}).get("problem_type_override")
@@ -388,7 +412,7 @@ class TrainingEngine:
             target_column = dataframe.columns[-1]
             config.setdefault("dataset_settings", {})["target_column"] = target_column
         if target_column not in dataframe.columns:
-            raise ValueError(f"Target column '{target_column}' not in dataset")
+            raise ColumnNotFoundError(target_column, dataframe.columns.tolist())
 
         profile = self.profiler.analyze(dataframe, target_column)
         problem_type = self._resolve_problem_type(profile, config)
