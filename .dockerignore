@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+*.md
+.env
+.env.local
+.vscode
+.idea
+__pycache__
+.pytest_cache
+*.pyc
+.DS_Store
+.next
+venv
+auto-ml-env
