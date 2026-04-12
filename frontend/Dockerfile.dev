@@ -1,0 +1,19 @@
+# Dockerfile for Next.js frontend with hot reload support
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY frontend/ .
+
+# Build the application
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
