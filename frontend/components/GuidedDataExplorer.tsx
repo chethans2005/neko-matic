@@ -117,6 +117,15 @@ export function GuidedDataExplorer({
     return result;
   }, [profile, classSeries, shape]);
 
+  // Extract correlation matrix data
+  const corrData = useMemo(() => {
+    const raw = profile.correlation_matrix;
+    if (!raw || typeof raw !== "object") return null;
+    const cols = Object.keys(raw);
+    if (cols.length === 0) return null;
+    return { cols: cols.slice(0, 12), raw };
+  }, [profile]);
+
   return (
     <div className="explorer-section">
       <h3>Dataset Explorer</h3>
@@ -215,14 +224,100 @@ export function GuidedDataExplorer({
           </div>
         </div>
 
-        {/* Correlation Heatmap Placeholder */}
-        <div className="viz-card">
+        {/* Correlation Heatmap */}
+        <div className="viz-card" style={{ gridColumn: "1 / -1" }}>
           <h4>Correlation Matrix</h4>
-          <p>
-            Correlation heatmap is computed by the backend and available via{" "}
-            <code>profile.correlation_matrix</code>. Use a dedicated heatmap library (e.g.,
-            Plotly, D3) for rich visual analysis.
-          </p>
+          {!corrData || corrData.cols.length === 0 ? (
+            <p>No numerical feature correlation data available.</p>
+          ) : (
+            <div style={{ overflowX: "auto", marginTop: "0.5rem" }}>
+              <table style={{ borderCollapse: "separate", borderSpacing: "3px", fontSize: "0.825rem", width: "100%" }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "6px 8px", textAlign: "left" }}></th>
+                    {corrData.cols.map((col) => (
+                      <th
+                        key={col}
+                        style={{
+                          padding: "6px 8px",
+                          textAlign: "center",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          whiteSpace: "nowrap",
+                          maxWidth: "90px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                        title={col}
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {corrData.cols.map((rowCol) => (
+                    <tr key={rowCol}>
+                      <td
+                        style={{
+                          padding: "6px 8px",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          whiteSpace: "nowrap",
+                          maxWidth: "110px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                        title={rowCol}
+                      >
+                        {rowCol}
+                      </td>
+                      {corrData.cols.map((colCol) => {
+                        const val = (corrData.raw[rowCol] as Record<string, number>)?.[colCol] ?? (rowCol === colCol ? 1 : 0);
+                        const numVal = Number(val);
+                        let bg = "rgba(255,255,255,0.03)";
+                        let color = "#e2e8f0";
+                        if (rowCol === colCol) {
+                          bg = "rgba(255,255,255,0.1)";
+                          color = "#94a3b8";
+                        } else if (numVal > 0) {
+                          const alpha = Math.min(0.85, Math.abs(numVal) * 0.75 + 0.15);
+                          bg = `rgba(16, 185, 129, ${alpha.toFixed(2)})`;
+                          color = alpha > 0.4 ? "#ffffff" : "#e2e8f0";
+                        } else if (numVal < 0) {
+                          const alpha = Math.min(0.85, Math.abs(numVal) * 0.75 + 0.15);
+                          bg = `rgba(99, 102, 241, ${alpha.toFixed(2)})`;
+                          color = alpha > 0.4 ? "#ffffff" : "#e2e8f0";
+                        }
+                        return (
+                          <td
+                            key={colCol}
+                            style={{
+                              padding: "8px 6px",
+                              textAlign: "center",
+                              background: bg,
+                              color: color,
+                              fontWeight: Math.abs(numVal) > 0.5 ? 700 : 400,
+                              borderRadius: "4px",
+                              fontFamily: "monospace",
+                            }}
+                            title={`${rowCol} vs ${colCol}: ${numVal.toFixed(4)}`}
+                          >
+                            {numVal.toFixed(2)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {corrData.cols.length < Object.keys(profile.correlation_matrix || {}).length && (
+                <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "0.5rem" }}>
+                  Showing top {corrData.cols.length} numerical features.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

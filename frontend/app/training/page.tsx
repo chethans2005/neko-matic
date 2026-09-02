@@ -579,31 +579,114 @@ export default function TrainingPage() {
                     </label>
                   </div>
                 </fieldset>
+
+                {/* Model Selection */}
+                <fieldset className="form-section" style={{ gridColumn: "1 / -1" }}>
+                  <legend>Model Selection</legend>
+                  <div className="field-row" style={{ marginBottom: "0.75rem" }}>
+                    <label htmlFor="auto-models" style={{ fontWeight: 600 }}>
+                      <input
+                        id="auto-models"
+                        type="checkbox"
+                        checked={!config.model_selection.list_of_models_to_train || config.model_selection.list_of_models_to_train.length === 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setConfig((prev) => ({
+                              ...prev,
+                              model_selection: { list_of_models_to_train: null },
+                            }));
+                          } else {
+                            setConfig((prev) => ({
+                              ...prev,
+                              model_selection: {
+                                list_of_models_to_train: [
+                                  "XGBClassifier",
+                                  "LGBMClassifier",
+                                  "RandomForestClassifier",
+                                  "GradientBoostingClassifier",
+                                  "LogisticRegression",
+                                  "SVC",
+                                ],
+                              },
+                            }));
+                          }
+                        }}
+                      />
+                      Train All Models (Auto Recommendation)
+                    </label>
+                  </div>
+
+                  {config.model_selection.list_of_models_to_train && (
+                    <div>
+                      <p style={{ fontSize: "0.85rem", color: "#94a3b8", marginBottom: "0.75rem" }}>
+                        Select candidate algorithms for training and hyperparameter search:
+                      </p>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "0.5rem 1rem" }}>
+                        {[
+                          { id: "XGBClassifier", name: "XGBoost Classifier" },
+                          { id: "LGBMClassifier", name: "LightGBM Classifier" },
+                          { id: "RandomForestClassifier", name: "Random Forest" },
+                          { id: "GradientBoostingClassifier", name: "Gradient Boosting" },
+                          { id: "LogisticRegression", name: "Logistic Regression" },
+                          { id: "SVC", name: "Support Vector Machine (SVC)" },
+                          { id: "KNeighborsClassifier", name: "K-Nearest Neighbors" },
+                          { id: "GaussianNB", name: "Gaussian Naive Bayes" },
+                          { id: "XGBRegressor", name: "XGBoost Regressor" },
+                          { id: "LGBMRegressor", name: "LightGBM Regressor" },
+                          { id: "RandomForestRegressor", name: "Random Forest Regressor" },
+                          { id: "GradientBoostingRegressor", name: "Gradient Boosting Regressor" },
+                          { id: "LinearRegression", name: "Linear Regression" },
+                          { id: "Ridge", name: "Ridge Regression" },
+                          { id: "Lasso", name: "Lasso Regression" },
+                          { id: "SVR", name: "Support Vector Machine (SVR)" },
+                        ].map((m) => {
+                          const isSelected = config.model_selection.list_of_models_to_train?.includes(m.id);
+                          return (
+                            <label key={m.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", cursor: "pointer" }}>
+                              <input
+                                type="checkbox"
+                                checked={!!isSelected}
+                                onChange={(e) => {
+                                  const current = config.model_selection.list_of_models_to_train || [];
+                                  const updated = e.target.checked
+                                    ? [...current, m.id]
+                                    : current.filter((item) => item !== m.id);
+                                  setConfig((prev) => ({
+                                    ...prev,
+                                    model_selection: { list_of_models_to_train: updated.length > 0 ? updated : null },
+                                  }));
+                                }}
+                              />
+                              <span>{m.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
               </div>
 
               {configError && <p style={{ color: "red" }}>{configError}</p>}
-              {configSuccess && <p style={{ color: "green" }}>✓ Configuration saved</p>}
+              {configSuccess && <p style={{ color: "green" }}>✓ Configuration updated</p>}
 
-              <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                <button type="submit">Save Configuration</button>
-                <button type="button" onClick={handleSaveDefault} style={{ background: "#1f7a4a" }}>
+              <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem" }}>
+                <button type="button" disabled={!dataset || launching} onClick={handleLaunchTraining}>
+                  {launching ? "Starting AutoML..." : "Start AutoML Training →"}
+                </button>
+                <button type="button" onClick={handleSaveDefault} style={{ background: "#475569" }}>
                   Save as Default
                 </button>
               </div>
+              {launchError && <p style={{ color: "red", marginTop: "0.5rem" }}>{launchError}</p>}
             </form>
-
-            <div style={{ marginTop: "2rem" }}>
-              <button disabled={!dataset || launching} onClick={handleLaunchTraining}>
-                {launching ? "Starting..." : "Start Training →"}
-              </button>
-              {launchError && <p style={{ color: "red" }}>{launchError}</p>}
-            </div>
           </section>
         )}
 
         {/* Monitor Tab */}
-        {activeTab === "monitor" && run.run_id && (
+        {activeTab === "monitor" && run.status !== "none" && (
           <section className="card">
+
             <h3>Training Monitor</h3>
             <div className="status-grid">
               <div>
@@ -639,18 +722,30 @@ export default function TrainingPage() {
                       <thead>
                         <tr>
                           <th>Model</th>
-                          <th>Metric</th>
-                          <th>Time (s)</th>
+                          <th>Score ({config.evaluation_metrics.primary_metric || "Metric"})</th>
+                          <th>Training Time</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {leaderboard.slice(0, 10).map((row: any, idx) => (
-                          <tr key={idx}>
-                            <td>{row.model_name || "-"}</td>
-                            <td>{Number(row.metric_value ?? 0).toFixed(4)}</td>
-                            <td>{Number(row.training_time ?? 0).toFixed(2)}</td>
-                          </tr>
-                        ))}
+                        {leaderboard.slice(0, 10).map((row: any, idx) => {
+                          const modelName = row.model_name || row.model || `-`;
+                          const primaryKey = config.evaluation_metrics.primary_metric || "accuracy";
+                          const metricVal =
+                            row.metric_value !== undefined && row.metric_value !== null
+                              ? Number(row.metric_value)
+                              : row[primaryKey] !== undefined && row[primaryKey] !== null
+                              ? Number(row[primaryKey])
+                              : row.accuracy ?? row.r2 ?? row.f1_weighted ?? row.score ?? 0;
+                          const trainTime = Number(row.training_time ?? 0);
+
+                          return (
+                            <tr key={idx}>
+                              <td><strong>{modelName}</strong></td>
+                              <td>{Number(metricVal).toFixed(4)}</td>
+                              <td>{trainTime.toFixed(2)}s</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

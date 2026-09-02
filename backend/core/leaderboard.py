@@ -16,6 +16,7 @@ class LeaderboardManager:
     def add(self, model_name: str, metrics: Dict[str, Any], training_time: float) -> None:
         row = {
             "model": model_name,
+            "model_name": model_name,
             "training_time": round(training_time, 2),
         }
         row.update(metrics)
@@ -23,7 +24,7 @@ class LeaderboardManager:
 
     def dataframe(self) -> pd.DataFrame:
         if not self._rows:
-            return pd.DataFrame(columns=["model", "training_time"])
+            return pd.DataFrame(columns=["model", "model_name", "training_time"])
 
         df = pd.DataFrame(self._rows)
         metric = self.primary_metric

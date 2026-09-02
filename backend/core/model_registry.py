@@ -97,6 +97,20 @@ class ModelRegistry:
     }
 
     @classmethod
+    def get_models(cls, problem_type: str) -> Dict[str, ModelSpec]:
+        if problem_type == "regression":
+            return cls.REGRESSION_MODELS
+        return cls.CLASSIFICATION_MODELS
+
+    @classmethod
+    def get_optuna_space(cls, model_name: str, problem_type: str = "classification") -> Dict[str, Any]:
+        class DummyTrial:
+            def suggest_int(self, name, low, high, **kwargs): return low
+            def suggest_float(self, name, low, high, **kwargs): return low
+            def suggest_categorical(self, name, choices, **kwargs): return choices[0]
+        return cls.search_space(DummyTrial(), model_name)
+
+    @classmethod
     def list_models(cls, problem_type: str) -> List[str]:
         if problem_type == "regression":
             return sorted(cls.REGRESSION_MODELS.keys())
@@ -122,6 +136,9 @@ class ModelRegistry:
             raise ValueError(f"Unknown model '{model_name}' for {problem_type}")
 
         spec = catalog[model_name]
+        if params is None:
+            return spec.constructor
+
         model_params = dict(spec.default_params)
         if params:
             model_params.update(params)

@@ -258,3 +258,171 @@ td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Unified Dashboard Tabs & Component Layout                                  */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 0.5rem;
+}
+
+.tab {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: auto;
+}
+
+.tab:hover:not(.disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(214, 84, 52, 0.25);
+}
+
+.tab.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f0ebe4;
+}
+
+/* Upload Success Card */
+.upload-success {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #eef7f2;
+  border: 1px solid #b2dfdb;
+  border-radius: 12px;
+  color: var(--ok);
+}
+
+.upload-success h4 {
+  margin: 0 0 0.4rem 0;
+}
+
+.upload-success button {
+  width: auto;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.9rem;
+}
+
+/* Guided Data Explorer */
+.explorer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  background: rgba(245, 239, 230, 0.6);
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.summary-grid strong {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.summary-grid p {
+  margin: 0.25rem 0 0 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.guides-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.guides-container h4 {
+  margin: 0 0 0.2rem 0;
+}
+
+.guide-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  box-shadow: 0 4px 14px rgba(15, 26, 43, 0.03);
+}
+
+.guide-card h5 {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.guide-description {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.guide-recommendation {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+
+.visualizations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.viz-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 14px rgba(15, 26, 43, 0.03);
+}
+
+.viz-card h4 {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.95rem;
+}
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e2d7c7;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.8rem 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%);
+  transition: width 400ms ease;
+  border-radius: 999px;
+}
+
